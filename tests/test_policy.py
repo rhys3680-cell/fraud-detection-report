@@ -8,6 +8,17 @@ from frauddetectionreport.policy import FullPolicy, WithReview
 
 
 class PolicyTests(unittest.TestCase):
+    def test_arrival_review_is_prefix_invariant_and_daily_bounded(self):
+        from frauddetectionreport.robustness import ArrivalReview
+        pol = ArrivalReview()
+        p = DEFAULT_PARAMS.with_(review_budget=1)
+        prob = np.array([.15, .2, .15, .2])
+        amount = np.full(4, 100.)
+        days = np.array([1, 1, 2, 2])
+        full = pol.decide(prob, amount, p, days)
+        np.testing.assert_array_equal(full[:2], pol.decide(prob[:2], amount[:2], p, days[:2]))
+        self.assertEqual(full.tolist(), [Action.REVIEW, Action.BLOCK, Action.REVIEW, Action.BLOCK])
+
     def test_customer_impact_keeps_missing_and_small_groups(self):
         action = np.array([Action.BLOCK, Action.AUTH, Action.AUTH, Action.APPROVE])
         report = fairness_check(action, np.array([0, 0, 1, 1]),
