@@ -8,3 +8,10 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Data (원본 ~1.3GB, 중간 산출물 포함 — 커밋 금지)
+data/
+
+# Notebook 실행 산출물
+.ipynb_checkpoints/
+reports/figures/
