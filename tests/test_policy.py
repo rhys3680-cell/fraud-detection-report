@@ -3,11 +3,24 @@ import unittest
 import numpy as np
 
 from frauddetectionreport.costs import Action, DEFAULT_PARAMS, expected_cost
-from frauddetectionreport.evaluate import operational_metrics
+from frauddetectionreport.evaluate import operational_metrics, fairness_check
 from frauddetectionreport.policy import FullPolicy, WithReview
 
 
 class PolicyTests(unittest.TestCase):
+    def test_customer_impact_keeps_missing_and_small_groups(self):
+        action = np.array([Action.BLOCK, Action.AUTH, Action.AUTH, Action.APPROVE])
+        report = fairness_check(action, np.array([0, 0, 1, 1]),
+                                np.array([None, None, "x", "x"]), DEFAULT_PARAMS)
+        self.assertEqual(report.n.sum(), 4)
+        missing = report.set_index("segment").loc["(missing)"]
+        self.assertEqual(missing.n_legit, 2)
+        self.assertAlmostEqual(missing.false_block_rate, 0.5)
+        self.assertAlmostEqual(missing.expected_auth_failure_rate, 0.05)
+        self.assertAlmostEqual(missing.expected_legit_denial_rate, 0.55)
+        self.assertTrue(missing.small_sample)
+        self.assertTrue(np.isnan(report.set_index("segment").loc["x", "expected_legit_denial_rate"]))
+
     def test_full_policy_is_pointwise_optimal_without_budget(self):
         params = DEFAULT_PARAMS.with_(review_budget=None)
         prob = np.linspace(0, 1, 10_001)

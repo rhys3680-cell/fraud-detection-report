@@ -335,28 +335,41 @@ def find_crossover(sens: pd.DataFrame, param: str, a: str, b: str) -> float | No
 # ============================================================ 공정성
 
 def fairness_check(
-    action: np.ndarray, is_fraud: np.ndarray, segment: np.ndarray
+    action: np.ndarray, is_fraud: np.ndarray, segment: np.ndarray,
+    p: CostParams | None = None,
 ) -> pd.DataFrame:
-    """세그먼트별 오차단율.
+    """결측·소표본 집단을 보존하는 고객 영향 점검.
 
-    총비용이 낮아도 특정 집단이 체계적으로 과차단되면 채택할 수 없다.
+    정상 기대 거절률 = 직접 오차단률 + 정상 인증률 * (1 - 정상 인증 통과율).
+    인증 실패는 관측값이 아닌 p의 가정이며, p 생략 시 기대값은 NaN이다.
+    정상 표본이 없는 집단의 정상 고객 지표 역시 NaN으로 남긴다.
     """
     action = np.asarray(action)
     is_fraud = np.asarray(is_fraud).astype(bool)
-    seg = pd.Series(np.asarray(segment)).astype(str)
+    seg = pd.Series(segment, dtype="string").fillna("(missing)")
 
     rows = []
     for name, m in seg.groupby(seg).groups.items():
         m = np.asarray(m)
         legit = m[~is_fraud[m]]
-        if len(legit) < 100:
-            continue
+        block_rate = (action[legit] == Action.BLOCK).mean() if len(legit) else np.nan
+        legit_auth = (action[legit] == Action.AUTH).mean() if len(legit) else np.nan
         rows.append(
             {
                 "segment": name,
                 "n": len(m),
+                "n_legit": len(legit),
+                "small_sample": len(legit) < 100,
                 "fraud_rate": is_fraud[m].mean(),
-                "false_block_rate": (action[legit] == Action.BLOCK).mean(),
+                "false_block_rate": block_rate,
+                "legit_auth_rate": legit_auth,
+                "expected_auth_failure_rate": (
+                    legit_auth * (1 - p.auth_pass_legit) if p is not None else np.nan
+                ),
+                "expected_legit_denial_rate": (
+                    block_rate + legit_auth * (1 - p.auth_pass_legit)
+                    if p is not None else np.nan
+                ),
                 "auth_rate": (action[m] == Action.AUTH).mean(),
             }
         )
