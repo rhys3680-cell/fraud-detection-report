@@ -21,8 +21,7 @@ import pandas as pd
 
 from .config import TIME_COL
 
-# 기본 비율. train 구간을 넉넉히 두되 보정에 10만 건 이상이 남도록 잡았다
-# (isotonic 회귀가 과적합하지 않을 만큼).
+# 기본 비율. train 구간을 넉넉히 두되 보정법의 fit/선택에 충분한 calib을 남긴다.
 DEFAULT_TRAIN_FRAC = 0.65
 DEFAULT_CALIB_FRAC = 0.15
 
