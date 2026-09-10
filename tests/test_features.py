@@ -7,6 +7,21 @@ from frauddetectionreport.features import add_uid, build_features
 
 
 class FeatureTests(unittest.TestCase):
+    def test_validation_amount_does_not_change_fitted_history(self):
+        df = pd.DataFrame({
+            'TransactionDT': [86400, 172800, 259200, 345600],
+            'TransactionAmt': [10., 20., 30., 40.],
+            'card1': [1.] * 4, 'addr1': [100.] * 4, 'D1': [0., 1., 2., 3.],
+        })
+        mask = np.array([True, True, False, False])
+        first, _ = build_features(df, mask)
+        changed = df.copy()
+        changed.loc[3, 'TransactionAmt'] = 100000.
+        second, _ = build_features(changed, mask)
+        pd.testing.assert_frame_equal(first.iloc[:3], second.iloc[:3])
+        self.assertEqual(second.loc[3, 'card1_amt_mean'], 15.)
+        self.assertEqual(second.loc[3, 'uid_amt_cummean'], 20.)
+
     def test_uid_requires_address(self):
         df = pd.DataFrame(
             {

@@ -1,0 +1,20 @@
+{
+  "params": {
+    "objective": "binary",
+    "learning_rate": 0.03,
+    "num_leaves": 127,
+    "min_child_samples": 80,
+    "feature_fraction": 0.6,
+    "bagging_fraction": 0.8,
+    "bagging_freq": 1,
+    "lambda_l2": 1.0,
+    "verbosity": -1,
+    "seed": 42,
+    "num_threads": 4,
+    "deterministic": true,
+    "force_col_wise": true
+  },
+  "rounds": 300,
+  "selection": "mean fold raw average precision; no calibration or test selection",
+  "note": "Follow-up experiment after prior test inspection; not a fresh holdout."
+}
